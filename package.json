@@ -1,0 +1,26 @@
+{
+  "name": "whatsappgemini",
+  "version": "1.0.0",
+  "description": "GeminiAPI for WhatsApp using Gemini API(gemini-pro) and whatsapp-web.js, written in JS using Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "JiaShen",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3",
+    "dotenv": "^16.0.3",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamkhalid2/WhatsAppGPT.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iamkhalid2/WhatsAppGPT/issues"
+  },
+  "homepage": "https://github.com/iamkhalid2/WhatsAppGPT#readme"
+}
