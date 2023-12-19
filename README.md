@@ -6,7 +6,7 @@ npm install npm@latest -g
 Installation
 Clone this Repo:
 
-git clone https://github.com/iamkhalid2/WhatsAppGPT.git
+git clone https://github.com/jackery0308/Whatsapp-Gemini.git
 Install Dependencies:
 
 npm install
