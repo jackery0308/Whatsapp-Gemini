@@ -22,7 +22,7 @@ client.on('message', message => {
   console.log(message.from.toString() + ":");
   console.log(message.body);
 
-  runCompletion(message.body.substring(1)).then(result => message.reply(result));  
+  runCompletion(message.body).then(result => message.reply(result));  
 });
  
 async function runCompletion (message) {
