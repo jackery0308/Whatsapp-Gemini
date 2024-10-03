@@ -14,7 +14,7 @@ Create a ".env" file
 
 Open file .env in a text editor and insert the following environment variable which holds the API key from your OpenAI account:
 
-OPENAI_API_KEY="INSERT YOUR OPENAI API KEY HERE"
+GEMENI_API_KEY="INSERT YOUR OPENAI API KEY HERE"
 To run the program you need to enter the following command on the command line:
 
 node index.js
