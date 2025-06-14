@@ -1,11 +1,46 @@
 const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 require('dotenv').config()
 
 const client = new Client();
 
+// Store for tracking messages and orders
+const messageTracker = {
+  processedMessages: new Set(),
+  activeOrders: new Map(),
+  
+  // Check if message was already processed
+  isProcessed: function(messageId) {
+    return this.processedMessages.has(messageId);
+  },
+  
+  // Mark message as processed
+  markProcessed: function(messageId) {
+    this.processedMessages.add(messageId);
+  },
+  
+  // Add new order
+  addOrder: function(phoneNumber, orderDetails) {
+    this.activeOrders.set(phoneNumber, {
+      details: orderDetails,
+      timestamp: new Date(),
+      status: 'pending'
+    });
+  },
+  
+  // Check if user has active order
+  hasActiveOrder: function(phoneNumber) {
+    return this.activeOrders.has(phoneNumber);
+  },
+  
+  // Get order details
+  getOrder: function(phoneNumber) {
+    return this.activeOrders.get(phoneNumber);
+  }
+};
+
 client.on('qr', (qr) => {
+  console.log('QR code received');
   qrcode.generate(qr, {small: true});
 });
 
@@ -15,45 +50,89 @@ client.on('ready', () => {
 
 client.initialize();
 
-// Set Gemini API key from environment variable
-const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
-
 client.on('message', message => {
-  console.log(message.from.toString() + ":");
-  console.log(message.body);
+  // Skip if message was already processed
+  if (messageTracker.isProcessed(message.id.id)) {
+    console.log('\n⚠️ Duplicate message detected, skipping...');
+    return;
+  }
 
-  runCompletion(message.body).then(result => message.reply(result));  
+  // Enhanced terminal logging
+  console.log('\n📱 New Message Received:');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`👤 From: ${message.from}`);
+  console.log(`📝 Message: ${message.body}`);
+  console.log(`⏰ Time: ${new Date().toLocaleString()}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+  const reply = generateAutoReply(message);
+  message.reply(reply);
+  
+  // Mark message as processed
+  messageTracker.markProcessed(message.id.id);
 });
- 
-async function runCompletion (message) {
-  // For text-only input, use the gemini-pro model
-  const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
-  try {
-    const result = await model.generateContent(message);
-    const response = await result.response;
+function generateAutoReply(message) {
+  const phoneNumber = message.from;
+  const messageText = message.body.toLowerCase();
+  
+  // Check if the message contains order-related keywords
+  const orderKeywords = ['americano', 'cappuccino', 'hot', 'iced'];
+  const hasOrder = orderKeywords.some(keyword => messageText.includes(keyword));
 
-    // Check for successful generation
-    if (response.promptFeedback.blockReason == null) {
-      const text = response.text();
-      console.log(text);
-      return text;
-    } else {
-      // Handle specific error types
-      if (response.promptFeedback.blockReason === "SAFETY") {
-        console.error("Text blocked due to safety concerns. Please rephrase your prompt.");
-        return "Your request generated content that violates safety guidelines. Please try again with a different prompt.";
-      } else if (response.promptFeedback.blockReason === "MODEL_UNAVAILABLE") {
-        console.error("Model unavailable. Please try again later.");
-        return "The model is currently unavailable. Please try again later.";
-      } else {
-        // General error handling
-        console.error("Generation failed", response.error);
-        return `An error occurred while generating content: ${response.error.message}`;
-      }
-    }
-  } catch (Ex) {
-    console.error(Ex);
-    return `Unexpected error: ${Ex.message}`;
+  // If user has active order, send appropriate message
+  if (messageTracker.hasActiveOrder(phoneNumber)) {
+    const order = messageTracker.getOrder(phoneNumber);
+    return `⚠️ You already have an active order:
+
+${order.details}
+
+Please wait for your current order to be completed before placing a new one. 😊`;
+  }
+
+  if (hasOrder) {
+    // Format the order confirmation message
+    const orderMessage = `Hi! 👋 Thanks for your order:
+
+${message.body}
+
+Total: RM12
+
+💳 Kindly make payment to:
+•⁠  ⁠TnG: 0167405900
+or  
+•⁠  ⁠Bank Transfer: 
+MAYBANK
+PANG KOK CHUNG
+164360679076
+
+Once payment is received, we'll start brewing your drinks ☕  
+You can collect them at the 1st floor lobby collection corner. We'll notify you once it's ready! 😊`;
+
+    // Add order to tracker
+    messageTracker.addOrder(phoneNumber, message.body);
+    
+    return orderMessage;
+  } else {
+    // Default menu message
+    return `☕️ RED COFFEE 
+📍Untuk penduduk Residen Jubilee sahaja
+
+Order je dari rumah 😍
+Pick up kat Lobby Collection Corner 🛎️
+
+—
+
+🔥 Fresh brew setiap hari
+😋 Sedap, mudah & jimat masa!
+🚫 Tak perlu turun jauh atau tunggu rider!
+
+—
+
+🌟 Promo Menu
+Americano – Hot RM5
+Cappuccino – Hot RM6
+
+—`;
   }
 }
